@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estimated Fetal Weight Calculator</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    body {
+      background-color: #f4f6f9;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      background: #ffffff;
+      width: 100%;
+      max-width: 440px;
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    }
+    h1 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      text-align: center;
+      color: #1e293b;
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+      color: #475569;
+    }
+    select, input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      background-color: #f8fafc;
+    }
+    select:focus, input:focus {
+      border-color: #0284c7;
+      background-color: #ffffff;
+      box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+    }
+    .result-card {
+      margin-top: 24px;
+      padding: 20px;
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 12px;
+      text-align: center;
+    }
+    .result-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #0369a1;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+    .result-value {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #0c4a6e;
+    }
+    .unit-badge {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #64748b;
+      margin-top: 2px;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>EFW Calculator</h1>
+
+    <div class="form-group">
+      <label for="formula">Formula Model</label>
+      <select id="formula" onchange="updateFields()">
+        <option value="hadlock4" selected>Hadlock 4 (BPD, HC, AC, FL)</option>
+        <option value="hadlock3">Hadlock 3 (HC, AC, FL)</option>
+        <option value="hadlock2">Hadlock 2 (BPD, AC, FL)</option>
+        <option value="shepard">Shepard (BPD, AC)</option>
+      </select>
+    </div>
+
+    <div class="form-group" id="group-bpd">
+      <label for="bpd">BPD - Biparietal Diameter (mm)</label>
+      <input type="number" id="bpd" placeholder="e.g. 71" step="0.1" oninput="calculateEFW()">
+    </div>
+
+    <div class="form-group" id="group-hc">
+      <label for="hc">HC - Head Circumference (mm)</label>
+      <input type="number" id="hc" placeholder="e.g. 265" step="0.1" oninput="calculateEFW()">
+    </div>
+
+    <div class="form-group" id="group-ac">
+      <label for="ac">AC - Abdominal Circumference (mm)</label>
+      <input type="number" id="ac" placeholder="e.g. 240" step="0.1" oninput="calculateEFW()">
+    </div>
+
+    <div class="form-group" id="group-fl">
+      <label for="fl">FL - Femur Length (mm)</label>
+      <input type="number" id="fl" placeholder="e.g. 54" step="0.1" oninput="calculateEFW()">
+    </div>
+
+    <div class="result-card">
+      <div class="result-title">Estimated Fetal Weight</div>
+      <div class="result-value" id="efw-result">--</div>
+      <div class="unit-badge">grams (g)</div>
+    </div>
+  </div>
+
+  <script>
+    function updateFields() {
+      const formula = document.getElementById('formula').value;
+
+      document.getElementById('group-bpd').classList.toggle('hidden', formula === 'hadlock3');
+      document.getElementById('group-hc').classList.toggle('hidden', formula === 'hadlock2' || formula === 'shepard');
+      document.getElementById('group-fl').classList.toggle('hidden', formula === 'shepard');
+
+      calculateEFW();
+    }
+
+    function calculateEFW() {
+      const formula = document.getElementById('formula').value;
+
+      // Inputs in mm, convert to cm for internal calculations
+      const bpd = parseFloat(document.getElementById('bpd').value) / 10;
+      const hc  = parseFloat(document.getElementById('hc').value) / 10;
+      const ac  = parseFloat(document.getElementById('ac').value) / 10;
+      const fl  = parseFloat(document.getElementById('fl').value) / 10;
+
+      let log10EFW = null;
+      let efwGrams = null;
+
+      if (formula === 'hadlock4' && bpd && hc && ac && fl) {
+        log10EFW = 1.3596 - (0.00386 * ac * fl) + (0.0064 * hc) + (0.00061 * bpd * ac) + (0.0424 * ac) + (0.174 * fl);
+      } else if (formula === 'hadlock3' && hc && ac && fl) {
+        log10EFW = 1.326 - (0.00326 * ac * fl) + (0.0107 * hc) + (0.0438 * ac) + (0.158 * fl);
+      } else if (formula === 'hadlock2' && bpd && ac && fl) {
+        log10EFW = 1.335 - (0.0034 * ac * fl) + (0.0316 * bpd) + (0.0457 * ac) + (0.1612 * fl);
+      } else if (formula === 'shepard' && bpd && ac) {
+        log10EFW = -1.7492 + (0.166 * bpd) + (0.046 * ac) - (0.002646 * ac * bpd);
+      }
+
+      if (log10EFW !== null && !isNaN(log10EFW)) {
+        efwGrams = Math.pow(10, log10EFW);
+        document.getElementById('efw-result').textContent = Math.round(efwGrams) + ' g';
+      } else {
+        document.getElementById('efw-result').textContent = '--';
+      }
+    }
+
+    updateFields();
+  </script>
+</body>
+</html>
